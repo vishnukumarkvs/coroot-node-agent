@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"sync"
 	"time"
 
@@ -45,11 +46,20 @@ var (
 	session           ebpfspy.Session
 	targetFinder      = &TargetFinder{processes: map[uint32]*processInfo{}}
 	profilingUpdateCh chan<- *containers.ProfilingUpdate
+	javaAsyncProfilerDenylist *regexp.Regexp
 )
 
 func Init(hostId, hostName string) (chan<- containers.ProcessInfo, chan *containers.ProfilingUpdate) {
 	updateCh := make(chan *containers.ProfilingUpdate, 100)
 	profilingUpdateCh = updateCh
+
+	if *flags.JavaAsyncProfilerDenylist != "" {
+		var err error
+		javaAsyncProfilerDenylist, err = regexp.Compile(*flags.JavaAsyncProfilerDenylist)
+		if err != nil {
+			klog.Errorf("invalid java async profiler deny list regex: %s", err)
+		}
+	}
 
 	endpointUrl = *flags.ProfilesEndpoint
 	if endpointUrl == nil {
@@ -198,6 +208,9 @@ func collectAsyncProfilerProfiles() {
 	var jvms []jvmInfo
 	for pid, pi := range targetFinder.processes {
 		if pi.isJvm && !pi.asyncProfilerErr {
+			if javaAsyncProfilerDenylist != nil && javaAsyncProfilerDenylist.MatchString(pi.containerId) {
+				continue
+			}
 			jvms = append(jvms, jvmInfo{
 				pid:         pid,
 				serviceName: pi.serviceName,
