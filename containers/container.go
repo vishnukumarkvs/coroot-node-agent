@@ -887,6 +887,9 @@ func (c *Container) onL7Request(pid uint32, fd uint64, timestamp uint64, r *l7.R
 	case l7.ProtocolDubbo2:
 		stats.observe(r.Status.String(), "", r.Duration)
 	case l7.ProtocolClickhouse:
+		if p := conn.DestinationKey.ActualDestinationIfKnown().Port(); p != 9000 && p != 9440 {
+			return nil
+		}
 		stats.observe(r.Status.String(), "", r.Duration)
 		query := l7.ParseClickhouse(r.Payload)
 		trace.ClickhouseQuery(query, r.Status.Error(), r.Duration)
