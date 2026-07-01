@@ -2,10 +2,24 @@ package l7
 
 import (
 	"bytes"
+	"io"
 	"unicode/utf8"
 
 	"github.com/ClickHouse/ch-go/proto"
 )
+
+func safeStr(r *proto.Reader, maxLen int) (string, error) {
+	l, err := r.StrLen()
+	if err != nil {
+		return "", err
+	}
+	if l > maxLen {
+		return "", io.ErrUnexpectedEOF
+	}
+	buf := make([]byte, l)
+	err = r.ReadFull(buf)
+	return string(buf), err
+}
 
 func ParseClickhouse(payload []byte) (query string) {
 	defer func() {
@@ -18,7 +32,7 @@ func ParseClickhouse(payload []byte) (query string) {
 	if _, err = r.Byte(); err != nil {
 		return ""
 	}
-	if _, err = r.Str(); err != nil {
+	if _, err = safeStr(r, 1024); err != nil {
 		return ""
 	}
 	version := int(proto.FeatureServerQueryTimeInProgress)
@@ -42,7 +56,7 @@ func ParseClickhouse(payload []byte) (query string) {
 			break
 		}
 	}
-	if _, err = r.Str(); err != nil { // inter-server secret
+	if _, err = safeStr(r, 1024); err != nil { // inter-server secret
 		return ""
 	}
 	if stage, err := r.UVarInt(); err != nil { // stage

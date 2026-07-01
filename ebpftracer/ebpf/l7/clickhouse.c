@@ -19,7 +19,15 @@ int is_clickhouse_query(char *buf, __u64 buf_size) {
     int offset = 0;
     if (b[1] == 0) {
         offset = 2;
+        // b[3] is the VarUInt length of the 'initial_user' string
+        if (b[3]>=0x40) {
+            return 0;
+        }
     } else if (b[1] == CLICKHOUSE_QUERY_ID_SIZE) {
+        // checks on query id of uuidv4 format
+        if (b[10]!='-' || b[15]!='-' || b[20]!='-' || b[25]!='-') {
+            return 0;
+        }
         offset = 2 + CLICKHOUSE_QUERY_ID_SIZE;
     } else {
         return 0;
