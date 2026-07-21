@@ -59,10 +59,7 @@ func Init(hostId, hostName string) (chan<- containers.ProcessInfo, chan *contain
 	}
 	klog.Infoln("profiles endpoint:", endpointUrl.String())
 
-	constLabels = labels.Labels{
-		{Name: "host.name", Value: hostName},
-		{Name: "host.id", Value: hostId},
-	}
+	constLabels = labels.FromStrings("host.name", hostName, "host.id", hostId)
 
 	so := ebpfspy.SessionOptions{
 		UnknownSymbolModuleOffset: true,
@@ -159,9 +156,9 @@ func upload(b *pprof.ProfileBuilder) error {
 	q := u.Query()
 	q.Set("service.name", b.ServiceName)
 	q.Set("container.id", b.ContainerID)
-	for _, l := range constLabels {
+	constLabels.Range(func(l labels.Label) {
 		q.Set(l.Name, l.Value)
-	}
+	})
 
 	for _, st := range b.Profile.SampleType {
 		st.Type = "ebpf:" + st.Type + ":" + st.Unit // ebpf:cpu:nanoseconds, ebpf:io_time:nanoseconds
@@ -357,9 +354,9 @@ func uploadProfile(prof *pprofProfile.Profile, serviceName, containerID string) 
 	q := u.Query()
 	q.Set("service.name", serviceName)
 	q.Set("container.id", containerID)
-	for _, l := range constLabels {
+	constLabels.Range(func(l labels.Label) {
 		q.Set(l.Name, l.Value)
-	}
+	})
 
 	prof = pruneProfile(prof, *flags.ProfilesPruneFraction)
 
