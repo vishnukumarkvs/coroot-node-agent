@@ -15,8 +15,8 @@ require (
 	github.com/florianl/go-conntrack v0.3.0
 	github.com/gobwas/glob v0.2.3
 	github.com/godbus/dbus/v5 v5.2.2
-	github.com/golang/snappy v0.0.4
-	github.com/google/pprof v0.0.0-20260202012954-cb029daf43ef
+	github.com/golang/snappy v1.0.0
+	github.com/google/pprof v0.0.0-20260302011040-a15ffb7f9dcc
 	github.com/google/winops v0.0.0-20260218212338-878c3f651658
 	github.com/grafana/jfr-parser v0.15.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
@@ -30,7 +30,7 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.70.1
-	github.com/prometheus/prometheus v0.51.2
+	github.com/prometheus/prometheus v0.311.3
 	github.com/pyroscope-io/dotnetdiag v1.2.1
 	github.com/samber/lo v1.53.0
 	github.com/shirou/gopsutil/v4 v4.26.5
@@ -47,7 +47,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.46.0
 	go.opentelemetry.io/otel/trace v1.46.0
 	golang.org/x/arch v0.4.0
-	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
+	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa
 	golang.org/x/net v0.58.0
 	golang.org/x/sys v0.48.0
 	golang.org/x/time v0.16.0
@@ -90,7 +90,7 @@ require (
 	github.com/golang/glog v1.2.5 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db // indirect
+	github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/josharian/native v1.1.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
