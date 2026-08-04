@@ -31,13 +31,29 @@ func ContainerdInit() error {
 	}
 	var err error
 	for _, socket := range sockets {
-		containerdClient, err = client.New(proc.HostPath(socket),
+		var c *client.Client
+		c, err = client.New(proc.HostPath(socket),
 			client.WithDefaultNamespace(k8sContainerdNamespace),
 			client.WithTimeout(containerdTimeout))
-		if err == nil {
-			klog.Infoln("using", socket)
-			break
+		if err != nil {
+			continue
 		}
+		ctx, cancel := context.WithTimeout(context.Background(), containerdTimeout)
+		serving, servErr := c.IsServing(ctx)
+		cancel()
+		if servErr != nil {
+			err = servErr
+			c.Close()
+			continue
+		}
+		if !serving {
+			err = fmt.Errorf("containerd at %s is not serving", socket)
+			c.Close()
+			continue
+		}
+		containerdClient = c
+		klog.Infoln("using", socket)
+		break
 	}
 	if containerdClient == nil {
 		return fmt.Errorf(
