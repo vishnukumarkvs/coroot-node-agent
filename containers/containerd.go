@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containerd/containerd"
-	"github.com/containerd/containerd/oci"
-	"github.com/containerd/containerd/pkg/cri/constants"
+	"github.com/containerd/containerd/v2/client"
+	"github.com/containerd/containerd/v2/pkg/oci"
 	"github.com/coroot/coroot-node-agent/common"
 	"github.com/coroot/coroot-node-agent/proc"
 	"github.com/coroot/logparser"
@@ -17,9 +16,10 @@ import (
 )
 
 const containerdTimeout = 30 * time.Second
+const k8sContainerdNamespace = "k8s.io"
 
 var (
-	containerdClient *containerd.Client
+	containerdClient *client.Client
 )
 
 func ContainerdInit() error {
@@ -31,9 +31,9 @@ func ContainerdInit() error {
 	}
 	var err error
 	for _, socket := range sockets {
-		containerdClient, err = containerd.New(proc.HostPath(socket),
-			containerd.WithDefaultNamespace(constants.K8sContainerdNamespace),
-			containerd.WithTimeout(time.Second))
+		containerdClient, err = client.New(proc.HostPath(socket),
+			client.WithDefaultNamespace(k8sContainerdNamespace),
+			client.WithTimeout(containerdTimeout))
 		if err == nil {
 			klog.Infoln("using", socket)
 			break
