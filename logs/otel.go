@@ -13,17 +13,27 @@ import (
 	otelLogs "github.com/agoda-com/opentelemetry-logs-go/logs"
 	sdk "github.com/agoda-com/opentelemetry-logs-go/sdk/logs"
 	"github.com/coroot/coroot-node-agent/common"
+	"github.com/coroot/coroot-node-agent/flags"
 	"github.com/coroot/logparser"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/time/rate"
 	"k8s.io/klog/v2"
 )
 
 // MultilineCollectorTimeout is how long the log parser waits before deciding a
 // multi-line log message is complete.
 const MultilineCollectorTimeout = time.Second
+
+func PatternExtractionRateLimiter() *rate.Limiter {
+	limit := *flags.LogPatternExtractionLimit
+	if limit <= 0 {
+		return nil
+	}
+	return rate.NewLimiter(rate.Limit(limit), int(limit*10))
+}
 
 type Config struct {
 	Endpoint    *url.URL

@@ -35,8 +35,9 @@ var (
 	InstanceType      = kingpin.Flag("instance-type", "`instance_type` label for `node_cloud_info` metric").Envar(envar("INSTANCE_TYPE")).String()
 	InstanceLifeCycle = kingpin.Flag("instance-life-cycle", "`instance_life_cycle` label for `node_cloud_info` metric").Envar(envar("INSTANCE_LIFE_CYCLE")).String()
 
-	LogPatternsPerContainer = kingpin.Flag("log-patterns-per-container", "Max unique log patterns per container per level").Default("256").Envar(envar("LOG_PATTERNS_PER_CONTAINER")).Int()
-	MaxLabelLength          = kingpin.Flag("max-label-length", "Maximum length of a metric label value").Default("4096").Envar(envar("MAX_LABEL_LENGTH")).Int()
+	LogPatternsPerContainer   = kingpin.Flag("log-patterns-per-container", "Max unique log patterns per container per level").Default("256").Envar(envar("LOG_PATTERNS_PER_CONTAINER")).Int()
+	LogPatternExtractionLimit = kingpin.Flag("log-pattern-extraction-limit", "Max log messages per second per container for which patterns are extracted. Over-limit messages are counted under a dedicated 'event was sampled' pattern (0 - unlimited)").Default("100").Envar(envar("LOG_PATTERN_EXTRACTION_LIMIT")).Float64()
+	MaxLabelLength            = kingpin.Flag("max-label-length", "Maximum length of a metric label value").Default("4096").Envar(envar("MAX_LABEL_LENGTH")).Int()
 
 	CollectorEndpoint  = kingpin.Flag("collector-endpoint", "A base endpoint URL for metrics, traces, logs, and profiles").Envar(envar("COLLECTOR_ENDPOINT")).URL()
 	ApiKey             = kingpin.Flag("api-key", "Coroot API key").Envar(envar("API_KEY")).String()

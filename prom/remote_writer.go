@@ -121,24 +121,38 @@ func (a *Agent) sendLoop() {
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		err = func() error {
-			if err := a.send(fName); err != nil {
-				return err
-			}
-			return os.Remove(fName)
-		}()
-		if err != nil {
-			dur := b.Duration()
-			klog.Warningf(
-				"failed to send metrics to %s, next attempt in %s: %s",
-				a.cfg.Endpoint, dur.String(), err,
-			)
-			time.Sleep(dur)
+		if fi, statErr := os.Stat(fName); statErr == nil && fi.Size() == 0 {
+			klog.Warningln("discarding empty spool file:", fName)
+			_ = os.Remove(fName)
 			continue
 		}
-		b.Reset()
+
+		err = a.send(fName)
+		if err == nil {
+			if rmErr := os.Remove(fName); rmErr != nil {
+				klog.Warningln("failed to remove sent spool file:", rmErr)
+			}
+			b.Reset()
+			continue
+		}
+
+		if errors.Is(err, errRejectedByCollector) {
+			klog.Warningf("dropping spool file %s: %s", fName, err)
+			_ = os.Remove(fName)
+			b.Reset()
+			continue
+		}
+
+		dur := b.Duration()
+		klog.Warningf(
+			"failed to send metrics to %s, next attempt in %s: %s",
+			a.cfg.Endpoint, dur.String(), err,
+		)
+		time.Sleep(dur)
 	}
 }
+
+var errRejectedByCollector = errors.New("rejected by the collector")
 
 func (a *Agent) send(fPath string) error {
 	// Read into memory so the request has an explicit Content-Length; streaming an *os.File
@@ -165,6 +179,9 @@ func (a *Agent) send(fPath string) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 300 {
+		if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusRequestEntityTooLarge {
+			return fmt.Errorf("%w: %s", errRejectedByCollector, resp.Status)
+		}
 		return errors.New(resp.Status)
 	}
 	klog.Infof("sent metrics in %s", time.Since(t).Truncate(time.Millisecond))
@@ -189,6 +206,9 @@ func (a *Agent) scrape() error {
 }
 
 func (a *Agent) writeToSpool(timestamp int64, payload []byte) error {
+	if len(payload) == 0 {
+		return nil
+	}
 	if err := a.truncateSpoolIfNeeded(); err != nil {
 		return err
 	}
@@ -202,6 +222,9 @@ func (a *Agent) writeToSpool(timestamp int64, payload []byte) error {
 		_ = os.Remove(f.Name())
 	}()
 	if _, err = f.Write(payload); err != nil {
+		return err
+	}
+	if err = f.Sync(); err != nil {
 		return err
 	}
 	if err = f.Close(); err != nil {

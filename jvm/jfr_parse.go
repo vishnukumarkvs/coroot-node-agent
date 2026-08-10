@@ -1,8 +1,9 @@
 package jvm
 
 import (
-	"fmt"
 	"io"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/pprof/profile"
@@ -41,20 +42,25 @@ func ParseProfiles(jfrData []byte, duration time.Duration) ([]JavaProfile, error
 	locMap := map[string]*profile.Location{}
 	var funcID, locID uint64
 
-	type resolvedFrame struct {
-		className  string
-		methodName string
-		fullName   string
-		line       uint32
+	type resolvedStack struct {
+		key  string
+		locs []*profile.Location
 	}
+	stackCache := map[types.StackTraceRef]*resolvedStack{}
+	var chunkHeader parser.ChunkHeader
 
-	resolveStack := func(stRef types.StackTraceRef) ([]resolvedFrame, string) {
+	var keyBuf strings.Builder
+	resolveStack := func(stRef types.StackTraceRef) *resolvedStack {
+		if rs, ok := stackCache[stRef]; ok {
+			return rs
+		}
 		st := p.GetStacktrace(stRef)
 		if st == nil {
-			return nil, ""
+			stackCache[stRef] = nil
+			return nil
 		}
-		frames := make([]resolvedFrame, 0, len(st.Frames))
-		key := ""
+		locs := make([]*profile.Location, 0, len(st.Frames))
+		keyBuf.Reset()
 		for _, f := range st.Frames {
 			m := p.GetMethod(f.Method)
 			if m == nil {
@@ -65,43 +71,41 @@ func ParseProfiles(jfrData []byte, duration time.Duration) ([]JavaProfile, error
 			if cls != nil {
 				clsName = p.GetSymbolString(cls.Name)
 			}
-			methodName := p.GetSymbolString(m.Name)
-			fullName := clsName + "." + methodName
-			frames = append(frames, resolvedFrame{clsName, methodName, fullName, f.LineNumber})
-			key += fullName + ";"
+			fullName := clsName + "." + p.GetSymbolString(m.Name)
+			keyBuf.WriteString(fullName)
+			keyBuf.WriteByte(';')
+			locKey := fullName + ":" + strconv.FormatUint(uint64(f.LineNumber), 10)
+			loc := locMap[locKey]
+			if loc == nil {
+				fn := funcMap[fullName]
+				if fn == nil {
+					funcID++
+					fn = &profile.Function{ID: funcID, Name: fullName, Filename: clsName}
+					funcMap[fullName] = fn
+				}
+				locID++
+				loc = &profile.Location{
+					ID:   locID,
+					Line: []profile.Line{{Function: fn, Line: int64(f.LineNumber)}},
+				}
+				locMap[locKey] = loc
+			}
+			locs = append(locs, loc)
 		}
-		return frames, key
+		rs := &resolvedStack{key: keyBuf.String(), locs: locs}
+		stackCache[stRef] = rs
+		return rs
 	}
 
 	addToAcc := func(acc map[string]*sampleAcc, stRef types.StackTraceRef, nVals int, valsFn func([]int64) []int64) {
-		frames, key := resolveStack(stRef)
-		if key == "" {
+		rs := resolveStack(stRef)
+		if rs == nil || rs.key == "" {
 			return
 		}
-		s := acc[key]
+		s := acc[rs.key]
 		if s == nil {
-			locs := make([]*profile.Location, len(frames))
-			for i, f := range frames {
-				locKey := fmt.Sprintf("%s.%s:%d", f.className, f.methodName, f.line)
-				loc := locMap[locKey]
-				if loc == nil {
-					fn := funcMap[f.fullName]
-					if fn == nil {
-						funcID++
-						fn = &profile.Function{ID: funcID, Name: f.fullName, Filename: f.className}
-						funcMap[f.fullName] = fn
-					}
-					locID++
-					loc = &profile.Location{
-						ID:   locID,
-						Line: []profile.Line{{Function: fn, Line: int64(f.line)}},
-					}
-					locMap[locKey] = loc
-				}
-				locs[i] = loc
-			}
-			s = &sampleAcc{locs: locs, vals: make([]int64, nVals)}
-			acc[key] = s
+			s = &sampleAcc{locs: rs.locs, vals: make([]int64, nVals)}
+			acc[rs.key] = s
 		}
 		s.vals = valsFn(s.vals)
 	}
@@ -113,6 +117,10 @@ func ParseProfiles(jfrData []byte, duration time.Duration) ([]JavaProfile, error
 				break
 			}
 			return nil, err
+		}
+		if h := p.ChunkHeader(); h != chunkHeader {
+			chunkHeader = h
+			clear(stackCache)
 		}
 		switch typ {
 		case p.TypeMap.T_EXECUTION_SAMPLE:
