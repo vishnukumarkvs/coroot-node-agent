@@ -474,7 +474,6 @@ func runEventsReader(name string, r *perf.Reader, ch chan<- Event, typ perfMapTy
 			continue
 		}
 		if rec.LostSamples > 0 {
-			klog.Errorln(name, "lost samples:", rec.LostSamples)
 			continue
 		}
 		var event Event
