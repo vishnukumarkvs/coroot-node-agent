@@ -9,7 +9,7 @@ require (
 	github.com/cilium/cilium v1.18.12
 	github.com/cilium/ebpf v0.20.1-0.20260218191617-ee67e7f43dd9
 	github.com/containerd/cgroups v1.1.0
-	github.com/containerd/containerd/v2 v2.2.6
+	github.com/containerd/containerd/v2 v2.2.8
 	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/coroot/logparser v1.4.0
 	github.com/florianl/go-conntrack v0.3.0
@@ -190,7 +190,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 	google.golang.org/grpc v1.83.1 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
+	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apimachinery v0.35.3 // indirect
 	k8s.io/client-go v0.35.3 // indirect
