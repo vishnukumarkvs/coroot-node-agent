@@ -16,6 +16,7 @@ var (
 	CgroupRoot              = kingpin.Flag("cgroupfs-root", "The mount point of the host cgroupfs root").Default("/sys/fs/cgroup").Envar("CGROUPFS_ROOT").String()
 	DisablePinger           = kingpin.Flag("disable-pinger", "Don't ping upstreams").Default("false").Envar("DISABLE_PINGER").Bool()
 	DisableL7Tracing        = kingpin.Flag("disable-l7-tracing", "Disable L7 tracing").Default("false").Envar("DISABLE_L7_TRACING").Bool()
+	EnableDnsTracing        = kingpin.Flag("enable-dns-tracing", "Enable DNS-only tracing (restores DNS metrics and FQDN-based service map naming without full L7 tracing). Requires --disable-l7-tracing; when L7 tracing is enabled, this flag is ignored").Default("false").Envar("ENABLE_DNS_TRACING").Bool()
 	EnableJavaTls           = kingpin.Flag("enable-java-tls", "Enable Java TLS instrumentation via dynamic agent loading").Default("false").Envar("ENABLE_JAVA_TLS").Bool()
 	EnableJavaAsyncProfiler = kingpin.Flag("enable-java-async-profiler", "Enable Java profiling via async-profiler (CPU, memory allocations, lock contention)").Default("false").Envar("ENABLE_JAVA_ASYNC_PROFILER").Bool()
 	JavaAsyncProfilerDelay  = kingpin.Flag("java-async-profiler-delay", "Delay in seconds before starting async-profiler after JVM process is detected").Default("30s").Envar("JAVA_ASYNC_PROFILER_DELAY").Duration()

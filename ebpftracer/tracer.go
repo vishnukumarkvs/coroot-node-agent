@@ -93,6 +93,7 @@ type globalUprobe struct {
 
 type Tracer struct {
 	disableL7Tracing bool
+	dnsTracing       bool
 	hostNetNs        netns.NsHandle
 	selfNetNs        netns.NsHandle
 
@@ -106,12 +107,17 @@ type Tracer struct {
 	globalUprobesLock sync.Mutex
 }
 
-func NewTracer(hostNetNs, selfNetNs netns.NsHandle, disableL7Tracing bool) *Tracer {
-	if disableL7Tracing {
+func NewTracer(hostNetNs, selfNetNs netns.NsHandle, disableL7Tracing, enableDnsTracing bool) *Tracer {
+	dnsTracing := disableL7Tracing && enableDnsTracing
+	switch {
+	case dnsTracing:
+		klog.Infoln("L7 tracing is disabled, DNS-only tracing is enabled")
+	case disableL7Tracing:
 		klog.Infoln("L7 tracing is disabled")
 	}
 	return &Tracer{
 		disableL7Tracing: disableL7Tracing,
+		dnsTracing:       dnsTracing,
 		hostNetNs:        hostNetNs,
 		selfNetNs:        selfNetNs,
 
@@ -320,7 +326,7 @@ func (t *Tracer) ebpf(ch chan<- Event) error {
 		{name: "file_events", typ: perfMapTypeFileEvents, perCPUBufferSizePages: 4},
 	}
 
-	if !t.disableL7Tracing {
+	if !t.disableL7Tracing || t.dnsTracing {
 		perfMaps = append(perfMaps, perfMap{name: "l7_events", typ: perfMapTypeL7Events, perCPUBufferSizePages: 32})
 	}
 
@@ -339,9 +345,35 @@ func (t *Tracer) ebpf(ch chan<- Event) error {
 	return nil
 }
 
+// The DNS-only tracer programs live in the same eBPF object as the full L7
+// pipeline, but their tracepoint section names are unique (dns_*). They are
+// attached only when DNS-only tracing is active, and then to the real
+// tracepoints, so a given tracepoint is never attached twice.
+var dnsTracepointAttachTargets = map[string][2]string{
+	"dns_sys_enter_sendto":   [2]string{"syscalls", "sys_enter_sendto"},
+	"dns_sys_enter_recvfrom": [2]string{"syscalls", "sys_enter_recvfrom"},
+	"dns_sys_exit_recvfrom":  [2]string{"syscalls", "sys_exit_recvfrom"},
+}
+
 func (t *Tracer) attachPrograms() error {
 	for _, programSpec := range t.collectionSpec.Programs {
 		program := t.collection.Programs[programSpec.Name]
+		if strings.HasPrefix(programSpec.Name, "dns_") {
+			if !t.dnsTracing {
+				continue
+			}
+			target, ok := dnsTracepointAttachTargets[programSpec.Name]
+			if !ok {
+				continue
+			}
+			l, err := link.Tracepoint(target[0], target[1], program, nil)
+			if err != nil {
+				t.Close()
+				return fmt.Errorf("failed to link program '%s': %w", programSpec.Name, err)
+			}
+			t.links = append(t.links, l)
+			continue
+		}
 		if t.disableL7Tracing {
 			switch programSpec.Name {
 			case "sys_enter_writev", "sys_enter_write", "sys_enter_sendto", "sys_enter_sendmsg", "sys_enter_sendmmsg":
