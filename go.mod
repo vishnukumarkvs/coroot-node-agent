@@ -9,7 +9,7 @@ require (
 	github.com/cilium/cilium v1.18.12
 	github.com/cilium/ebpf v0.20.1-0.20260218191617-ee67e7f43dd9
 	github.com/containerd/cgroups v1.1.0
-	github.com/containerd/containerd/v2 v2.2.8
+	github.com/containerd/containerd/v2 v2.2.9
 	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/coroot/logparser v1.4.2
 	github.com/florianl/go-conntrack v0.3.0
