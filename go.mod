@@ -24,7 +24,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/ianlancetaylor/demangle v0.0.0-20250417193237-f615e6bd150b
 	github.com/jpillora/backoff v1.0.0
-	github.com/klauspost/compress v1.20.1
+	github.com/klauspost/compress v1.20.4
 	github.com/mdlayher/taskstats v0.0.0-20230712191918-387b3d561d14
 	github.com/moby/moby/api v1.55.0
 	github.com/moby/moby/client v0.5.1
@@ -46,12 +46,12 @@ require (
 	go.opentelemetry.io/otel v1.46.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.46.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.46.0
-	go.opentelemetry.io/otel/log v0.20.0
+	go.opentelemetry.io/otel/log v0.22.0
 	go.opentelemetry.io/otel/sdk v1.46.0
 	go.opentelemetry.io/otel/trace v1.46.0
 	golang.org/x/arch v0.4.0
 	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa
-	golang.org/x/net v0.60.0
+	golang.org/x/net v0.62.0
 	golang.org/x/sys v0.49.0
 	golang.org/x/time v0.16.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
@@ -79,8 +79,8 @@ require (
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.20.0 // indirect
-	go.opentelemetry.io/otel/sdk/log v0.20.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.22.0 // indirect
+	go.opentelemetry.io/otel/sdk/log v0.22.0 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	k8s.io/klog v1.0.0 // indirect
 )
@@ -160,3 +160,5 @@ replace (
 	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 	github.com/pyroscope-io/dotnetdiag => github.com/coroot/dotnetdiag v1.2.2
 )
+
+replace github.com/coroot/coroot-cluster-agent => github.com/vishnukumarkvs/coroot-cluster-agent v0.0.0-20261124115050-ded607ce089e

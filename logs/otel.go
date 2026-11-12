@@ -103,7 +103,7 @@ func normalizeTraceContextKey(k string) string {
 	return ""
 }
 
-func logRecordAttrs(source, patternHash string, attributes map[string]string) ([]log.KeyValue, trace.SpanContext) {
+func logRecordAttrs(source, patternHash string, attributes map[string]string) ([]attribute.KeyValue, trace.SpanContext) {
 	var traceId trace.TraceID
 	var spanId trace.SpanID
 	for k, v := range attributes {
@@ -119,16 +119,16 @@ func logRecordAttrs(source, patternHash string, attributes map[string]string) ([
 		}
 	}
 	sc := trace.NewSpanContext(trace.SpanContextConfig{TraceID: traceId, SpanID: spanId})
-	attrs := make([]log.KeyValue, 0, len(attributes)+2)
-	attrs = append(attrs, log.String("pattern.hash", patternHash))
+	attrs := make([]attribute.KeyValue, 0, len(attributes)+2)
+	attrs = append(attrs, attribute.String("pattern.hash", patternHash))
 	if source != "" {
-		attrs = append(attrs, log.String(LogSourceAttribute, source))
+		attrs = append(attrs, attribute.String(LogSourceAttribute, source))
 	}
 	for k, v := range attributes {
 		if sc.IsValid() && normalizeTraceContextKey(k) != "" {
 			continue
 		}
-		attrs = append(attrs, log.String(k, v))
+		attrs = append(attrs, attribute.String(k, v))
 	}
 	return attrs, sc
 }
@@ -154,7 +154,7 @@ func OtelLogEmitter(containerId, source string) logparser.OnMsgCallbackF {
 		record.SetObservedTimestamp(ts)
 		record.SetSeverityText(level.String())
 		record.SetSeverity(cacommon.LogSeverity(level))
-		record.SetBody(log.StringValue(msg))
+		record.SetBody(attribute.StringValue(msg))
 		record.AddAttributes(attrs...)
 		ctx := context.Background()
 		if sc.IsValid() {
